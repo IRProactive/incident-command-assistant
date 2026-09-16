@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./api
+    container_name: ica-api
+    ports:
+      - "5001:5001"          # host:container — change the host side only if 5001 collides
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=sqlite:////data/incident_command.db
+      - UPLOAD_DIR=/data/uploads
+      - LLM_PROVIDER=none    # none | anthropic — can also be set/overridden from the Settings panel at runtime
+      - ANTHROPIC_API_KEY=   # optional — leave blank to enter the key via the frontend Settings panel instead
+      - ANTHROPIC_MODEL=claude-sonnet-4-5
+    volumes:
+      - ./api:/app
+      - ./db:/data
+      - ./reference-corpus:/reference-corpus:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: ica-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  db-data:
